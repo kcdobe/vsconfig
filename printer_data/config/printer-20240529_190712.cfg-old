@@ -1,0 +1,243 @@
+# This file contains common pin mappings for the BIGTREETECH SKR mini
+# E3 v2.0. To use this config, the firmware should be compiled for the
+# STM32F103 with a "28KiB bootloader" and USB communication. Also,
+# select "Enable extra low-level configuration options" and configure
+# "GPIO pins to set at micro-controller startup" to "!PA14".
+
+# The "make flash" command does not work on the SKR mini E3. Instead,
+# after running "make", copy the generated "out/klipper.bin" file to a
+# file named "firmware.bin" on an SD card and then restart the SKR
+# mini E3 with that SD card.
+
+# See docs/Config_Reference.md for a description of parameters.
+
+[include mainsail.cfg]
+[exclude_object]
+[skew_correction]
+[include KAMP_Settings.cfg]
+[include macros.cfg]
+[include sb2209.cfg]
+[include stealthburner_leds.cfg]
+[include nevermore.cfg]
+[include KLICKY/klicky-probe.cfg]
+#[include adxl.cfg]
+
+[stepper_x]
+step_pin: PB13
+dir_pin: PB12
+enable_pin: !PB14
+microsteps: 16
+rotation_distance: 40
+endstop_pin: tmc2209_stepper_x:virtual_endstop
+position_min: 0
+position_endstop: 0
+position_max: 218
+homing_speed: 50
+
+[tmc2209 stepper_x]
+uart_pin: PC11
+tx_pin: PC10
+uart_address: 0
+diag_pin: ^PC0     # Set to MCU pin connected to TMC DIAG pin
+driver_SGTHRS: 10 # 255 is most sensitive value, 0 is least sensitive
+run_current: 0.580
+stealthchop_threshold: 0
+
+[stepper_y]
+step_pin: PB10
+dir_pin: PB2
+enable_pin: !PB11
+microsteps: 16
+rotation_distance: 40
+endstop_pin: ^PC1
+position_min: 0
+position_endstop: 0
+position_max: 225
+homing_speed: 50
+
+[tmc2209 stepper_y]
+uart_pin: PC11
+tx_pin: PC10
+uart_address: 2
+run_current: 0.580
+stealthchop_threshold: 0
+
+[stepper_z]
+step_pin: PB0
+dir_pin: PC5
+enable_pin: !PB1
+microsteps: 16
+rotation_distance: 40
+endstop_pin:probe:z_virtual_endstop
+#position_endstop: 0.0
+position_min: -8
+position_max: 200
+
+[tmc2209 stepper_z]
+uart_pin: PC11
+tx_pin: PC10
+uart_address: 1
+#run_current: 0.580 #removed to help heat
+run_current: 0.500
+stealthchop_threshold: 0
+
+[heater_bed]
+heater_pin: PC9
+sensor_type: Generic 3950
+sensor_pin: PC3
+#control: pid
+#pid_Kp: 54.027
+#pid_Ki: 0.770
+#pid_Kd: 948.182
+min_temp: 0
+max_temp: 130
+
+[mcu]
+serial: /dev/serial/by-id/usb-Klipper_stm32f103xe_38FFD3054246303427831957-if00
+
+[printer]
+kinematics: corexz
+max_velocity: 200
+max_accel: 1000
+max_z_velocity: 50
+max_z_accel: 1000
+square_corner_velocity: 4.0
+
+[temperature_sensor chamber]
+sensor_type: EPCOS 100K B57560G104F
+sensor_pin: PA0
+min_temp: 0
+max_temp: 100
+gcode_id: C
+
+[static_digital_output usb_pullup_enable]
+pins: !PA14
+
+[bed_mesh]
+speed: 120
+horizontal_move_z: 10
+mesh_min: 10, 20
+mesh_max: 207, 220
+probe_count: 7, 7
+fade_start: 2
+fade_end: 10
+mesh_pps: 2, 2
+algorithm: bicubic
+
+[input_shaper]
+shaper_freq_x: 44.0
+shaper_type_x: zv
+shaper_freq_y: 51.8
+shaper_type_y: ei
+
+[temperature_sensor RPi]
+sensor_type: temperature_host
+sensor_path: /sys/class/thermal/thermal_zone0/temp
+#   The path to temperature system file. The default is
+#   "/sys/class/thermal/thermal_zone0/temp" which is the temperature
+#   system file on a Raspberry Pi computer.
+
+[temperature_sensor SKR]
+sensor_type: temperature_mcu
+sensor_mcu: mcu
+
+[display]
+lcd_type: st7920
+cs_pin: EXP1_7
+sclk_pin: EXP1_6
+sid_pin: EXP1_8
+encoder_pins: ^EXP1_5, ^EXP1_3
+click_pin: ^!EXP1_2
+
+[output_pin beeper]
+pin: EXP1_1
+
+[board_pins]
+aliases:
+    # EXP1 header
+    EXP1_1=PB5,  EXP1_3=PA9,   EXP1_5=PA10, EXP1_7=PB8,  EXP1_9=<GND>,
+    EXP1_2=PA15, EXP1_4=<RST>, EXP1_6=PB9,  EXP1_8=PB15, EXP1_10=<5V>
+
+[servo klicky_servo]
+#check were your servo is wired
+pin: PA1
+maximum_servo_angle: 180
+minimum_pulse_width: 0.00025
+maximum_pulse_width: 0.0024
+
+[gcode_macro _servo_test_angle]
+gcode:
+	{% set ANGLE  = params.ANGLE|int %}
+	
+    SET_SERVO SERVO=klicky_servo ANGLE={ANGLE}
+    G4 P250
+    SET_SERVO SERVO=klicky_servo WIDTH=0.0
+
+[probe]
+Pin: EBBCan: PB6
+x_offset: 0.0
+y_offset: 19.75
+#z_offset: 6.17
+speed: 15
+lift_speed: 120
+samples: 3
+samples_result: median
+sample_retract_dist: 2
+samples_tolerance: 0.01
+samples_tolerance_retries: 10
+
+[temperature_fan MCU_fan]
+sensor_type: temperature_host
+pin: PC6
+max_temp: 80
+target_temp:60
+min_temp: 0
+#shutdown_speed: 0.0
+#kick_start_time: 0.5
+#off_below: 0.19
+#max_speed: 1.0
+#min_speed: 0.0
+control: pid
+pid_Kp: 2.0
+pid_Ki: 5.0
+pid_Kd: 0.5
+pid_deriv_time: 2.0
+
+# See the sample-lcd.cfg file for definitions of common LCD displays.
+
+#*# <---------------------- SAVE_CONFIG ---------------------->
+#*# DO NOT EDIT THIS BLOCK OR BELOW. The contents are auto-generated.
+#*#
+#*# [bed_mesh default]
+#*# version = 1
+#*# points =
+#*# 	  0.106250, -0.018750, -0.018750, 0.006250, 0.006250, -0.031250
+#*# 	  0.106250, -0.018750, -0.006250, 0.056250, 0.043750, -0.018750
+#*# 	  0.131250, 0.031250, 0.031250, 0.068750, 0.068750, -0.006250
+#*# 	  0.131250, 0.056250, 0.068750, 0.081250, 0.081250, -0.006250
+#*# x_count = 6
+#*# y_count = 4
+#*# mesh_x_pps = 2
+#*# mesh_y_pps = 2
+#*# algo = lagrange
+#*# tension = 0.2
+#*# min_x = 42.5
+#*# max_x = 175.5
+#*# min_y = 76.5
+#*# max_y = 148.5
+#*#
+#*# [extruder]
+#*#
+#*# [heater_bed]
+#*# control = pid
+#*# pid_kp = 74.492
+#*# pid_ki = 1.431
+#*# pid_kd = 969.331
+#*#
+#*# [probe]
+#*# z_offset = 6.720
+#*#
+#*# [skew_correction CaliFlower]
+#*# xy_skew = -0.0011060295286016199
+#*# xz_skew = 0.0
+#*# yz_skew = 0.0
